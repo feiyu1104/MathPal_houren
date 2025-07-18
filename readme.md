@@ -6,7 +6,8 @@
 
 ### 系统结构
 
-本项目采用主管代理，整体架构为：![架构图](https://gitee.com/xuefeiyuy/langgraph_my/raw/study-RAG/img/%E6%9E%B6%E6%9E%84%E5%9B%BE.png）
+本项目采用主管代理，整体架构为：
+![struct](https://gitee.com/xuefeiyuy/langgraph_my/raw/study-RAG/img/%E6%9E%B6%E6%9E%84%E5%9B%BE.png)
 
 整体流程为：init → supervisor → {explain | generate | grade | report | fallback} → polish → user_profile → END
 
