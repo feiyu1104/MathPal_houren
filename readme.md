@@ -6,7 +6,7 @@
 
 ### 系统结构
 
-本项目采用主管代理，整体架构为：![架构图](img\架构图.png)
+本项目采用主管代理，整体架构为：![img/架构图.png · xuefeiyu/langgraph_my - 码云 - 开源中国](F:\实习项目\study with AI\img\架构图-1752851418126-16.png)
 
 整体流程为：init → supervisor → {explain | generate | grade | report | fallback} → polish → user_profile → END
 
@@ -89,7 +89,7 @@ langgraph dev
 
 即可自动打开网页，你可以在这里输入消息，查看系统运行
 
-![](img\LangGraph Server.png)
+![img/LangGraph Server.png · xuefeiyu/langgraph_my - 码云 - 开源中国](https://gitee.com/xuefeiyuy/langgraph_my/blob/study-RAG/img/LangGraph Server.png)
 
 ---
 
@@ -97,23 +97,23 @@ langgraph dev
 
 输入”你是谁“
 
-![fallback.png](img\fallback.png)
+![img/fallback.png · xuefeiyu/langgraph_my - 码云 - 开源中国](F:\实习项目\study with AI\img\fallback-1752851302171-4.png)
 
 输入”你能讲一讲分数加法吗“
 
-![explain](img\explain.png)
+![img/explain.png · xuefeiyu/langgraph_my - 码云 - 开源中国](F:\实习项目\study with AI\img\explain-1752851265719-1.png)
 
 输入”出一道题“
 
-![question](img\question.png)
+![img/question.png · xuefeiyu/langgraph_my - 码云 - 开源中国](F:\实习项目\study with AI\img\question-1752851330615-7.png)
 
 输入”答案是B“
 
-![grade](img\grade.png)
+![img/grade.png · xuefeiyu/langgraph_my - 码云 - 开源中国](F:\实习项目\study with AI\img\grade-1752851379272-13.png)
 
 输入”我学的怎么样“
 
-![study](img\study.png)
+![img/study.png · xuefeiyu/langgraph_my - 码云 - 开源中国](F:\实习项目\study with AI\img\study-1752851357308-10.png)
 
 ---
 
