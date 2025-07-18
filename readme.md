@@ -22,7 +22,7 @@
 
 - user_profile_agent节点可以绘制用户的画像
 
-- ###### build_study_report：总结所有已学知识点的掌握情况
+- build_study_report：总结所有已学知识点的掌握情况
 
 - fallback_agent：异常输入处理，在非数学话题时提醒用户回到数学场景
 
