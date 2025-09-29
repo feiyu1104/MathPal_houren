@@ -1,49 +1,71 @@
-# readme
+# MathPal_houren — 小学数学AI伴学系统
 
-## 项目介绍
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue?logo=python&logoColor=white)](https://www.python.org/)[![LangGraph](https://img.shields.io/badge/Built%20with-LangGraph-00a67e?logo=langchain&logoColor=white)](https://langchain-ai.github.io/langgraph/)[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)[![Qwen](https://img.shields.io/badge/LLM-Qwen-orange)](https://help.aliyun.com/zh/qwen/)[![RAG](https://img.shields.io/badge/Architecture-RAG-lightgrey)](https://en.wikipedia.org/wiki/Retrieval-augmented_generation)[![Open in LangGraph Dev](https://img.shields.io/badge/Open%20in-LangGraph%20Dev-9cf?logo=github)](https://github.com/langchain-ai/langgraph)
 
-这是一个基于 LangGraph 的小学数学AI伴学系统，可以实现讲解、出题、判断对错、分析学情等功能。
+---
+
+**MathPal_houren**是一个基于 **LangGraph**和**Qwen模型**构建的智能小学数学学习助手，专为五年级学生设计，支持知识点讲解、智能出题、答题判分、学情分析与个性化反馈等功能。
+
+---
+
+## 🌟项目介绍
+
+MathPal_houren 是一个面向小学数学教育场景的 AI 伴学系统。它利用大语言模型（LLM）与检索增强生成（RAG）技术，结合学生画像与学习行为，提供个性化、互动式的学习体验。
+
+核心功能包括：
+
+- 📘 **知识点讲解**：针对用户提问，精准讲解小学数学知识点（当前支持五年级上册内容）。
+- 📝 **智能出题**：根据当前学习内容动态生成选择题。
+- ✅ **自动判题**：判断用户答题正误，并提供解析。
+- 📊 **学情报告**：汇总学习记录，生成掌握情况报告。
+- 💬 **风格适配**：根据学生偏好优化语言表达，提升亲和力。
 
 ### 系统结构
 
 本项目采用主管代理，整体架构为：
-![struct](https://gitee.com/xuefeiyuy/langgraph_my/raw/study-RAG/img/%E6%9E%B6%E6%9E%84%E5%9B%BE.png)
 
-整体流程为：init → supervisor → {explain | generate | grade | report | fallback} → polish → user_profile → END
+```
+init → supervisor → {explain | generate | grade | report | fallback} → polish → user_profile → END
+```
+
+![架构](img/架构图.png)
 
 ### 节点介绍
 
-- supervisor节点接受用户输入，进行意图分析以及知识点提取
-
-- question_generating_agent节点可以根据当前的知识点动态生成一道数学选择题
-
-- explain_knowledge_agent节点可以讲解当前知识点
-
-- grade_agent节点可以判断用户回答的对错
-
-- user_profile_agent节点可以绘制用户的画像
-
-- build_study_report：总结所有已学知识点的掌握情况
-
-- fallback_agent：异常输入处理，在非数学话题时提醒用户回到数学场景
-
-- polish _agent：结合学生喜欢的语言风格和学习兴趣进行回答优化
+| 节点                        | 功能                           |
+| --------------------------- | ------------------------------ |
+| `supervisor`                | 分析用户意图，提取知识点       |
+| `explain_knowledge_agent`   | 讲解指定数学知识点             |
+| `question_generating_agent` | 动态生成一道选择题             |
+| `grade_agent`               | 判定用户答案正误并反馈         |
+| `build_study_report`        | 生成学习掌握情况报告           |
+| `fallback_agent`            | 处理非数学话题，引导回学习场景 |
+| `polish_agent`              | 根据学生语言风格优化回答       |
+| `user_profile_agent`        | 更新并维护用户学习画像         |
 
 ---
 
-## 快速使用
+## 🚀快速使用
 
-### API申请
+### 1. 克隆项目
 
-你需要申请一个[Qwen](https://bailian.console.aliyun.com/&tab=doc?spm=5176.29597918.J_SEsSjsNv72yRuRFS2VknO.4.4ad67b08WPVLoI&tab=doc#/doc/?type=model&url=https%3A%2F%2Fhelp.aliyun.com%2Fdocument_detail%2F2840915.html&renderType=iframe) API以及一个[LangSmith](https://smith.langchain.com/settings) 的 API 密钥 
+```
+git clone https://github.com/feiyu1104/MathPal_houren.git
+cd MathPal_houren
+```
 
-### 项目部署
+### 2. API申请
+
+你需要申请以下两个 API 密钥：
+
+- **Qwen API**（通义千问）：[申请地址](https://bailian.console.aliyun.com/&tab=doc?spm=5176.29597918.J_SEsSjsNv72yRuRFS2VknO.4.4ad67b08WPVLoI&tab=doc#/doc/?type=model&url=https%3A%2F%2Fhelp.aliyun.com%2Fdocument_detail%2F2840915.html&renderType=iframe)
+- **LangSmith API**：[申请地址](https://smith.langchain.com/settings)
+
+### 3. 项目部署
 
 复制以下命令到终端来下载代码
 
 ```shell
-# 项目部署
-git clone https://gitee.com/xuefeiyuy/langgraph_my.git
 # 创建虚拟环境
 conda create -n 环境名字 python=3.11
 conda activate 环境名字
@@ -51,16 +73,14 @@ conda activate 环境名字
 pip install -r requirements.txt
 ```
 
-安装LangGraph CLI
-
-输入
+### 4. 安装LangGraph CLI
 
 ```shell
 # Python >= 3.11 is required.
 pip install --upgrade "langgraph-cli[inmem]"
 ```
 
-### 创建 LangGraph 应用程序 
+### 5. 创建 LangGraph 应用程序 
 
 输入以下命令，创建一个new-langgraph-project-python模板
 
@@ -74,15 +94,18 @@ langgraph new path/to/your/app --template new-langgraph-project-python
 pip install -e . 
 ```
 
-用下载代码中的.env文件替换新 LangGraph 应用文件根目录下的.env，将你申请的两个api填入相应的位置
+- 将本项目中的 `.env` 文件复制到 `app/` 根目录，并填入你的 API 密钥。
+- 将 `graph.py` 复制到 `src/agent/graph.py`。
+- 将 `vectorstore/` 和 `primary_math_docs/` 目录复制到项目根目录。
 
-用下载代码中的graph.py文件替换新 LangGraph 应用文件中src/agent/graph.py文件
+> 💡 若需更换教材范围（如换成四年级），请： 
+>
+> 1. 将对应知识点 `.txt` 文件放入 `primary_math_docs/`
+> 2. 修改 `vector_make.py` 中的路径
+> 3. 运行 `python vector_make.py` 重建向量库
+> 4. 更新 `graph.py` 中的向量库路径
 
-将下载代码中的vectorstore文件（向量库）和primary_math_docs文件（五年级上册知识点总结）复制到LangGraph 应用文件根目录下
-
-### 运行LangGraph Server 
-
-输入
+### 6. 运行LangGraph Server 
 
 ```shell
 langgraph dev
@@ -90,48 +113,50 @@ langgraph dev
 
 即可自动打开网页，你可以在这里输入消息，查看系统运行
 
-![LangGraph Server](https://gitee.com/xuefeiyuy/langgraph_my/raw/study-RAG/img/LangGraph%20Server.png)
+![LangGraph Server](img/LangGraph Server.png)
 
 ---
 
-## 示例运行
+## 🧪 示例运行
 
 输入”你是谁“
 
-![fallback](https://gitee.com/xuefeiyuy/langgraph_my/raw/study-RAG/img/fallback.png)
+![fallback](img/fallback.png)
 
 输入”你能讲一讲分数加法吗“
 
-![explain](https://gitee.com/xuefeiyuy/langgraph_my/raw/study-RAG/img/explain.png)
+![explain](img/explain.png)
 
 输入”出一道题“
 
-![question](https://gitee.com/xuefeiyuy/langgraph_my/raw/study-RAG/img/question.png)
+![question](img/question.png)
 
 输入”答案是B“
 
-![grade](https://gitee.com/xuefeiyuy/langgraph_my/raw/study-RAG/img/grade.png)
+![grade](img/grade.png)
 
 输入”我学的怎么样“
 
-![study](https://gitee.com/xuefeiyuy/langgraph_my/raw/study-RAG/img/study.png)
+![study](img/study.png)
 
 ---
 
-## 项目注意
+## ⚠️ 注意事项
 
-项目全部使用Qwen模型，你可以进行替换
-
-项目使用的向量库是基于小学五年级上册知识点，应用于explain_knowledge_agent，你可以进行替换
-
-1. 将txt文件放置于primary_math_docs
-2. 修改vector_make.py文件中的相应地址
-3. 运行vector_make.py
-4. 修改graph.py文件中的地址
-
-项目只提供核心代码，没有测试代码，只能使用local server来测试
+4. 本项目默认使用 **Qwen 大模型**，你可自行替换为其他兼容 LangChain 的 LLM。
+2. 向量知识库基于 **小学五年级上册数学教材**，如需扩展，请按上述步骤更新文档与向量库。
+3. 项目仅包含核心逻辑，**未提供单元测试**，建议通过 `langgraph dev` 本地调试。
+4. 所有数据处理均在本地完成，**不上传用户隐私信息**。
 
 ---
 
-感谢您的使用！
+## ❤️ 致谢
+
+感谢 [LangGraph ](https://langchain-ai.github.io/langgraph/)、[Qwen ](https://help.aliyun.com/zh/qwen/)和 [LangSmith ](https://smith.langchain.com/)提供的强大工具支持！
+
+欢迎贡献代码、提交 Issue 或提出改进建议！让我们一起打造更好的 AI 教育助手 🌱
+
+---
+
+感谢你的使用，如果你喜欢这个项目，请 ⭐️ Star 支持我们！
 
