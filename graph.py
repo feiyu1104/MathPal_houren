@@ -6,10 +6,8 @@ from __future__ import annotations
 
 import os
 import random
-import subprocess
 import time
-from typing import Annotated, Literal
-from typing import TypedDict
+from typing import Annotated, Literal, TypedDict
 
 from dotenv import load_dotenv
 from langchain.embeddings.base import Embeddings
@@ -27,9 +25,18 @@ from langgraph.prebuilt import InjectedState
 from langgraph.types import Command
 from openai import OpenAI
 
-random.seed(int.from_bytes(os.urandom(4), 'big') ^ int(time.time() * 1e6))
+random.seed(int.from_bytes(os.urandom(4), "big") ^ int(time.time() * 1e6))
 # 加载 .env 文件，加载api
 load_dotenv()
+
+DASHSCOPE_API_KEY = os.getenv("DASHSCOPE_API_KEY")
+DASHSCOPE_API_BASE = os.getenv("DASHSCOPE_API_BASE")
+
+
+def _safe_last_user_message(messages: list[BaseMessage]) -> str:
+    if not messages:
+        return ""
+    return messages[-1].content
 
 
 class CustomState(TypedDict):
@@ -88,12 +95,12 @@ def supervisor(state: Annotated[CustomState, InjectedState]) -> CustomState:
     llm = ChatOpenAI(
         model="qwen-plus",
         temperature=0.5,
-        openai_api_key=os.getenv("DASHSCOPE_API_KEY"),
-        openai_api_base=os.getenv("DASHSCOPE_API_BASE")
+        openai_api_key=DASHSCOPE_API_KEY,
+        openai_api_base=DASHSCOPE_API_BASE
     )
     messages = state.get("messages", [])
     # 倒数第一条：用户的话
-    user_msg = messages[-1].content
+    user_msg = _safe_last_user_message(messages)
     prompt = ChatPromptTemplate.from_messages([
         ("system", """
         你是专业的意图识别助手，请根据用户的输入内容：{user_data}，完成以下任务：
@@ -122,8 +129,8 @@ def supervisor(state: Annotated[CustomState, InjectedState]) -> CustomState:
     out_data = chain.invoke({"user_data": user_msg})
     # print("目前意图识别智能体输出："+data)
     parts = out_data.split('|', 1)
-    intent = parts[0].strip()
-    part = parts[1].strip()
+    intent = parts[0].strip() if parts else "其它"
+    part = parts[1].strip() if len(parts) > 1 else "无"
     if part == "无":
         topic = state.get("current_topic", "")
     else:
@@ -137,17 +144,19 @@ def supervisor(state: Annotated[CustomState, InjectedState]) -> CustomState:
     }
     next_node = next_map.get(intent, "fallback_agent")  # 如果键不存在，就返回默认值 "fallback_agent"
 
-    return {"current_topic": topic,
-            "all_topics": state["all_topics"] + ([topic] if topic and topic not in state["all_topics"] else []),
-            "next_node": next_node
-            }
+    all_topics = state.get("all_topics", [])
+    return {
+        "current_topic": topic,
+        "all_topics": all_topics + ([topic] if topic and topic not in all_topics else []),
+        "next_node": next_node
+    }
 
 
 def explain_knowledge_agent(state: Annotated[CustomState, InjectedState]) -> CustomState:
     # 初始化语言模型
     llm = ChatOpenAI(
-        openai_api_key=os.getenv("DASHSCOPE_API_KEY"),
-        base_url=os.getenv("DASHSCOPE_API_BASE"),
+        openai_api_key=DASHSCOPE_API_KEY,
+        base_url=DASHSCOPE_API_BASE,
         model="qwen-plus-2025-04-28"
     )
     topic = state.get("current_topic", "")
@@ -215,8 +224,8 @@ def question_generating_agent(state: CustomState) -> CustomState:
     # 使用 DashScope 提供的兼容 OpenAI 接口服务
     llm = ChatOpenAI(
         model="qwen-plus-2025-04-28",
-        openai_api_key=os.getenv("DASHSCOPE_API_KEY"),
-        openai_api_base=os.getenv("DASHSCOPE_API_BASE")
+        openai_api_key=DASHSCOPE_API_KEY,
+        openai_api_base=DASHSCOPE_API_BASE
     )
 
     prompt = ChatPromptTemplate.from_messages([
@@ -238,14 +247,20 @@ def question_generating_agent(state: CustomState) -> CustomState:
         """)
     ])
     chain = prompt | llm | StrOutputParser()
-    input_data = state.get("current_topic", "")
+    input_data = {"topic": state.get("current_topic", "")}
     raw = chain.invoke(input_data)
     # 解析输出 
     parts = raw.strip().split('|')
     if len(parts) != 2:
-        raise ValueError("输出格式错误，未检测到完整的四段内容")
+        return {
+            "messages": [AIMessage(content="题目生成失败，请再试一次。")]
+        }
     question, opts = parts
     options = opts.split(',')
+    if len(options) < 4:
+        return {
+            "messages": [AIMessage(content="题目生成失败，请再试一次。")]
+        }
     opening = random.choice(OPENING_LINES)
     closing = random.choice(CLOSING_LINES)
     q_text = (
@@ -262,13 +277,13 @@ def question_generating_agent(state: CustomState) -> CustomState:
 def grade_agent(state: CustomState) -> CustomState:
     llm = ChatOpenAI(
         model="qwen-plus-2025-04-28",
-        openai_api_key=os.getenv("DASHSCOPE_API_KEY"),
-        base_url=os.getenv("DASHSCOPE_API_BASE")
+        openai_api_key=DASHSCOPE_API_KEY,
+        base_url=DASHSCOPE_API_BASE
     )
 
     messages = state.get("messages", [])
     if len(messages) < 2:
-        raise ValueError("缺少题目或回答")
+        return {"response": "请先出题并作答后再进行判题。"}
     # 倒数第二条：AI 出的题目
     question_msg = messages[-2].content
     # 倒数第一条：用户的回答
@@ -309,8 +324,8 @@ def grade_agent(state: CustomState) -> CustomState:
 
 def user_profile_agent(state: CustomState) -> CustomState:
     llm = ChatOpenAI(
-        openai_api_key=os.getenv("DASHSCOPE_API_KEY"),
-        base_url=os.getenv("DASHSCOPE_API_BASE"),
+        openai_api_key=DASHSCOPE_API_KEY,
+        base_url=DASHSCOPE_API_BASE,
         model="qwen-plus")
     prompt = ChatPromptTemplate.from_messages([
         ("system", """你是一个专业的学习行为分析师，专注于分析小学五年级学生的数学学习行为。
@@ -339,7 +354,11 @@ def user_profile_agent(state: CustomState) -> CustomState:
         "all_topics": state.get("all_topics", ""),
     }
     parts = chain.invoke(input_data)
-    knowledge_part, language_style, interaction_style, learning_interest = parts.split('|')
+    part_list = parts.split('|')
+    if len(part_list) != 4:
+        knowledge_part, language_style, interaction_style, learning_interest = "", "一般", "直接输出", "一般"
+    else:
+        knowledge_part, language_style, interaction_style, learning_interest = part_list
 
     # 分割知识点信息
     knowledge_parts = knowledge_part.split('@') if knowledge_part else []
@@ -378,7 +397,7 @@ def build_study_report(state: CustomState) -> CustomState:
     """
     study = state.get("study", [])
     if not study:
-        return "暂无学习记录。"
+        return {"response": "暂无学习记录。"}
 
     learned = []
     for item in study:
@@ -395,13 +414,13 @@ def build_study_report(state: CustomState) -> CustomState:
 
 def fallback_agent(state: CustomState) -> CustomState:
     llm = ChatOpenAI(
-        openai_api_key=os.getenv("DASHSCOPE_API_KEY"),
-        base_url=os.getenv("DASHSCOPE_API_BASE"),
+        openai_api_key=DASHSCOPE_API_KEY,
+        base_url=DASHSCOPE_API_BASE,
         model="qwen-plus"
     )
     messages = state.get("messages", [])
     # 倒数第一条：用户的回答
-    user_msg = messages[-1].content
+    user_msg = _safe_last_user_message(messages)
     prompt = ChatPromptTemplate.from_messages([
         ("system", """你是一位很擅长解决问题的数学智能助手-小仁，针对用户输入内容：{data}，帮助用户解决问题。
         要求：
@@ -425,8 +444,8 @@ def fallback_agent(state: CustomState) -> CustomState:
 
 def polish_agent(state: CustomState) -> CustomState:
     llm = ChatOpenAI(
-        openai_api_key=os.getenv("DASHSCOPE_API_KEY"),
-        base_url=os.getenv("DASHSCOPE_API_BASE"),
+        openai_api_key=DASHSCOPE_API_KEY,
+        base_url=DASHSCOPE_API_BASE,
         model="qwen-plus"
     )
     prompt = ChatPromptTemplate.from_messages([
@@ -460,10 +479,10 @@ def polish_agent(state: CustomState) -> CustomState:
 
 # 初始化向量库
 # 加载向量库
-persist_dir = "/root/study/app/vectorstore/grade5"
+persist_dir = "vectorstore/grade5"
 embed = DashscopeEmbeddings(
-    api_key=os.getenv("DASHSCOPE_API_KEY"),
-    base_url=os.getenv("DASHSCOPE_API_BASE")
+    api_key=DASHSCOPE_API_KEY,
+    base_url=DASHSCOPE_API_BASE
 )
 vectorstore = Chroma(persist_directory=persist_dir, embedding_function=embed)
 retriever = vectorstore.as_retriever(search_kwargs={"k": 2})   # 取最相关 2 段
